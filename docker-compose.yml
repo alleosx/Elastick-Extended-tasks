@@ -128,7 +128,7 @@ services:
       - POSTGRES_USER=kanban
       - POSTGRES_PASSWORD=kanban
     ports:
-      - "8085:8085"
+      - "8080:8080"
     depends_on:
       - kanban-postgres
     networks:
@@ -175,7 +175,7 @@ services:
       - /dev/kmsg:/dev/kmsg:ro
     privileged: true
     ports:
-      - "8080:8080"
+      - "8081:80"
     restart: always
     networks:
       - ingress
