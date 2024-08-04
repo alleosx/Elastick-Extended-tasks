@@ -22,4 +22,8 @@ scrape_configs:
     metrics_path: '/actuator/prometheus'
     scrape_interval: 15s # This can be adjusted based on our needs
     static_configs:
-      - targets: ['kanban-app:8080']
+      - targets: ['kanban-app:8085']
+
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']

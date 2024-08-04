@@ -128,7 +128,7 @@ services:
       - POSTGRES_USER=kanban
       - POSTGRES_PASSWORD=kanban
     ports:
-      - "8080:8080"
+      - "8085:8085"
     depends_on:
       - kanban-postgres
     networks:
@@ -165,19 +165,18 @@ services:
       - ingress
 
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.46.0
-    container_name: monitoring_cadvisor
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
     volumes:
       - /:/rootfs:ro
-      - /var/run:/var/run:rw
-      - /var/run/docker.sock:/var/run/docker.sock:rw
+      - /var/run:/var/run:ro
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
-      - /dev/disk/:/dev/disk:ro
-    expose:
-      - 8080
+      - /dev/kmsg:/dev/kmsg:ro
+    privileged: true
     ports:
-      - 8085:80
+      - "8080:8080"
+    restart: always
     networks:
       - ingress
 
