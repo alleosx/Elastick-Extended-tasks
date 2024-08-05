@@ -1,27 +1,126 @@
-## Kanban Application
+Level 1. Linux
+Развернута виртуальная машина в среде Virtualbox на базе ОС Ubuntu 20.04,
 
-This is a simple implementation of a Kanban Board, a tool that helps visualize and manage work. Originally it was first created in Toyota automotive, but nowadays it's widely used in software development.
+Level 2. Docker
+Развернут контейнер с Nginx в качестве веб-прокси.
+Весь роутинг настроен путем фильтрации доменных имен.
+Тип хранилища папки /var/log - persistent volume. Необходимо для сбора и отправки логов в EFK Stack на уровне 5. 
 
-A Kanban Board is usually made of 3 columns - *TODO*, *InProgres*s & *Done*. In each column there are Post-it notes that represents task and their status.
+Level 3. TaskManagerApp и PostgreSQL
+Развернуты контейнеры с TaskManagerApp и PostgreSQL
+Характеристики разворачиваемых сервисов:
+PostgreSQL в standalone-варианте
+Тип хранилища - persistent volume. При удалении контейнера данные должны сохраняться и быть доступны при последующем запуске нового контейнера PostgreSQL
+pgAdmin развернут в отдельном контейнере и настроено подключение к БД.
+Тип хранилища - persistent volume. При удалении контейнера и последующем запуске нового инстанса данные о подключении к БД должны сохраняться
+При переходе по адресу pgadmin.test.com должен открываться интерфейс pgAdmin,  выставить логин/пароль на вход mail@test.com / kanban
+TaskManagerApp
+В качестве рабочей СУБД должен использоваться инстанс развернутой ранее в контейнере PostgreSQL.
+При переходе по адресу kanban.test.com открывается TaskManagerApp
+При переходе по адресу swagger.test.com открывается интерфейс Kanban REST API
 
-As already stated this project is an implementation of such board and made of 3 separate Docker containers that holds:
+Запуск всех сервисов должен выполнятся при помощи инструмента docker compose
+Имя контейнера аналогично сервису
+Volume: kanban-data:/var/lib/postgresql/data
 
-- PostgreSQL database
-- Java backend (Spring Boot)
-- Angular frontend
+Проброс портов 5432:5432
+
+Переменные:
+
+      - POSTGRES_DB=kanban
+      - POSTGRES_USER=kanban
+      - POSTGRES_PASSWORD=kanban
+
+Сервис kanban-app
+Сборка из Dockerfile в каталоге ./kanban-app
+
+Имя контейнера аналогично сервису
+
+Проброс портов 8085:8080
+
+Переменные:
+
+      - DB_SERVER=kanban-postgres
+      - POSTGRES_DB=kanban
+      - POSTGRES_USER=kanban
+      - POSTGRES_PASSWORD=kanban
+
+Линк kanban-postgres
+
+Сервис kanban-ui
+Сборка из Dockerfile в каталоге ./kanban-ui
+
+Имя контейнера аналогично сервису
+
+Проброс портов 4200:80
+
+Линк kanban-app
+
+
+Level 4. Prometheus и Grafana
+Развернут контейнеры с Prometheus и Grafana.
+
+Prometheus в standalone-варианте. Тип хранилища - persistent volume. При удалении контейнера данные должны сохраняться и быть доступны при последующем запуске нового контейнера 
+
+Пазвернуты экспортеры для сбора метрик в Prometheus:
+
+nginx_exporter для сбора метрик с Nginx
+node_exporter для сбора метрик хостовой машины
+postgres_exporter для сбора метрик с БД
+
+Метрика по jvm с TaskManagerApp: 
+
+Level 5. Elasticstack
+Развернуты контейнеры с EFK stack в standalone-варианте.
+
+Elasticsearch Тип хранилища - persistent volume. При удалении контейнера данные должны сохраняться и быть доступны при последующем запуске нового контейнера.
+
+Fluentd для агрегации логов Nginx через отдельный volume, инициализированный на уровне 2.
+
+Kibana как средство просмотра логов
+
+
+Level 6. Extended tasks
+Написае скрипт на bash по автоматизации бекапа базы PostgreSQL
+
+Добавлен экспортер Сadvisor для сбора метрик c контейнеров
+
+
+Архитектура
+
+![Без названия](https://github.com/user-attachments/assets/d93afd01-4c27-4fe4-885b-3279ab8adcd7)
+
+
+1. Проверка доступности сервисов.
+
+test.com - Доступна стартовая страница Nginx
+
+kanban.test.com - Доступна страница Kanban UI
+
+swagger.test.com - Доступна страница Kanban REST Api
+
+pgadmin.test.com - Доступна страница pgAdmin
+
+grafana.test.com - Доступна страница Grafana
+
+kibana.test.com - Доступна страница Kibana
 
 
 
+2. Проверка корректности настройки и работы сервисов.
 
----
+На странице Kanban UI через графическое окружение виртуалки успешно создаются канбан-доски и задачи внутри этих досок, работает перемещение по статусам.
 
-### Prerequisites
+На странице pgAdmin настроено подключение к БД, просматриваются данные по доскам и задачам внутри таблиц, выполнено резервное копирование БД.
 
-In order to run this application you need to install two tools: **Docker** & **Docker Compose**.
+На странице Grafana доступны дашборды для просмотра метрик:
 
-Instructions how to install **Docker** on [Ubuntu](https://docs.docker.com/install/linux/docker-ce/ubuntu/), [Windows](https://docs.docker.com/docker-for-windows/install/), [Mac](https://docs.docker.com/docker-for-mac/install/).
+Node метрики c хоста
+Nginx метрики с веб-прокси
+JVM метрики с Kanban
+PostgreSQL метрики с БД
+На странице Kibana доступны для просмотра логи с веб-прокси Nginx. Создан как минимум 1 дашборд по ошибкам в логах Nginx
 
-**Docker Compose** is already included in installation packs for *Windows* and *Mac*, so only Ubuntu users needs to follow [this instructions](https://docs.docker.com/compose/install/).
 
 
 ### How to run it?
